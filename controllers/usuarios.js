@@ -1,27 +1,50 @@
 const { response ,request} = require('express');
+const bcryptjs = require('bcryptjs');
 
-const usuarioGet =  (req=request, res=response) => {
+const Usuario=  require('../models/usuario');
 
-    const {q,nombre='no name',apikey,page=1,limit} = req.query;
+const usuarioGet =  async(req=request, res=response) => {
+
+    //const {q,nombre='no name',apikey,page=1,limit} = req.query;
+
+    const query = {estado:true};
+
+    const {limite  = 5,desde=0} = req.query;
+
+    const [total,usuarios] = await Promise.all([
+        Usuario.countDocuments(query),
+        Usuario.find(query)
+                        .skip(Number(desde))
+                        .limit(Number(limite))
+    ]);
+
+    // const ususario = await Usuario.find(query)
+    //                     .skip(Number(desde))
+    //                     .limit(Number(limite));
+
+    // const total= await Usuario.countDocuments(querys);
 
     res.json({
-        msg: 'get API - controlador',
-        q,
-        nombre,
-        apikey,
-        page,
-        limit
+        total,
+        usuarios
     });
 };
 
-const usuarioPost =  (req, res=response) => {
+const usuarioPost =  async(req, res=response) => {
 
-    const {nombre,edad}= req.body;
+    const {nombre,correo,password,rol}= req.body;
+    const usuario = new Usuario({nombre,correo,password,rol});
+
+    //encriptar la contraseña
+    const salt = bcryptjs.genSaltSync();
+    usuario.password= bcryptjs.hashSync(password,salt);
+
+    //guardar la constraseña
+    await usuario.save();
 
     res.json({
         msg: 'post API- Controlador',
-        nombre,
-        edad
+        usuario
     });
 };
 
@@ -31,20 +54,35 @@ const usuarioPatch =  (req, res=response) => {
     });
 };
 
-const usuarioDelete =  (req, res= response) => {
-    res.json({
-        msg: 'delete API - controlador'
-    });
-};
-
-const usuarioPut =  (req, res=response) => {
+const usuarioDelete =  async(req, res= response) => {
 
     const {id} = req.params;
 
-    res.json({
-        msg: 'put API - Controlador',
-        id
-    });
+    //borramos fisicamente
+    //const usuario = await Usuario.findByIdAndDelete(id);
+
+    const usuario = await Usuario.findByIdAndUpdate(id,{estado:false});
+    
+    res.json(usuario);
+};
+
+const usuarioPut =  async(req, res=response) => {
+
+    const {id} = req.params;
+
+    const {_id,password,google,correo, ...resto} = req.body;
+
+    //TODO validar contra base de datos
+
+    if(password){
+        //encriptar la contraseña
+        const salt = bcryptjs.genSaltSync();
+        resto.password= bcryptjs.hashSync(password,salt);
+    }
+
+    const usuario = await Usuario.findByIdAndUpdate(id,resto);
+
+    res.json(usuario);  
 };
 
 module.exports = {
