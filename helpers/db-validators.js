@@ -44,15 +44,16 @@ const existeProductoByID = async(id)=>{
     }
 }
 
-const existeCategoriaByNombre = async(nombre) => {
+/**Validar Colecciones permitidas */
 
-    let nombreCategoria = nombre.toUpperCase();
-    const existeCategoria = await Categoria.findOne({nombre:nombreCategoria});
+const coleccionesPermitidas = async(coleccion='',colecciones = []) => {
 
-    if(!existeCategoria){
-        throw new Error(`No exise la categoria: ${nombre}`);
+    const incluida = colecciones.includes(coleccion);
+    if(!incluida){
+        throw new Error(`La coleccion ${coleccion} no está incluida - ${colecciones}`);
     }
 
+    return true;
 }
 
 module.exports = {
@@ -60,6 +61,6 @@ module.exports = {
     existeEmail,
     existeUsuarioPorID,
     existeCategoriaByID,
-    existeCategoriaByNombre,
-    existeProductoByID
+    existeProductoByID,
+    coleccionesPermitidas
 }
